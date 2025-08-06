@@ -8,7 +8,7 @@ resource "aws_security_group" "bastion_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["138.185.97.236/32"]
+    cidr_blocks = ["138.255.144.169/32"]
   }
 
   egress {
@@ -52,12 +52,12 @@ resource "aws_security_group" "ec2_sg" {
 }
 
 resource "aws_instance" "bastion" {
-  ami                    = "ami-08a6efd148b1f7504" # Amazon Linux 2 AMI
+  ami                    = "ami-08a6efd148b1f7504"
   instance_type          = "t2.micro"
   subnet_id              = module.vpc.public_subnets[0]
   vpc_security_group_ids = [aws_security_group.bastion_sg.id]
-  key_name               = "vpc"
-
+  key_name               = "arch2"
+  associate_public_ip_address = true
   tags = {
     Name = "bastion-host"
   }
@@ -71,7 +71,7 @@ module "ec2_instance" {
   name = "wn-${each.key}"
 
   instance_type = "t2.medium"
-  key_name      = "vpc"
+  key_name      = "arch2"
   monitoring    = true
   subnet_id     = module.vpc.private_subnets[0]
 
@@ -82,13 +82,14 @@ module "ec2_instance" {
 }
 resource "aws_network_interface" "ani" {
   subnet_id   = module.vpc.private_subnets[1]
+  security_groups = [aws_security_group.ec2_sg.id]
   tags = {
     Name = "primary_network_interface"
   }
 }
 
 resource "aws_instance" "cp-01" {
-  key_name = "vpc"
+  key_name = "arch2"
   instance_type = "t2.medium"
   ami = "ami-020cba7c55df1f615"
   network_interface {
