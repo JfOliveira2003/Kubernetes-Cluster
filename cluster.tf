@@ -34,7 +34,15 @@ resource "aws_security_group" "ec2_sg" {
     from_port       = 22
     to_port         = 22
     protocol        = "tcp"
-    security_groups = [aws_security_group.bastion_sg.id]
+    cidr_blocks = [aws_instance.bastion.public_ip]
+  }
+  ingress {
+    description = "Interacting with the api server"
+    from_port = 0
+    to_port = 6443
+    protocol = "TCP"
+    cidr_blocks = [aws_instance.bastion.public_ip]
+
   }
 
   # This allows all outbound traffic, which is needed for the instance
@@ -56,7 +64,7 @@ resource "aws_instance" "bastion" {
   instance_type          = "t2.micro"
   subnet_id              = module.vpc.public_subnets[0]
   vpc_security_group_ids = [aws_security_group.bastion_sg.id]
-  key_name               = "arch2"
+  key_name               = "Arch"
   associate_public_ip_address = true
   tags = {
     Name = "bastion-host"
@@ -67,11 +75,13 @@ module "ec2_instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"
 
   for_each = toset(["one", "two"])
-
+  
   name = "wn-${each.key}"
-
+ 
+  ami = "ami-020cba7c55df1f615" 
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id] 
   instance_type = "t2.medium"
-  key_name      = "arch2"
+  key_name      = "Arch"
   monitoring    = true
   subnet_id     = module.vpc.private_subnets[0]
 
@@ -80,21 +90,15 @@ module "ec2_instance" {
     Environment = "dev"
   }
 }
-resource "aws_network_interface" "ani" {
+
+resource "aws_instance" "cp-01" {
+   
+  key_name = "Arch"
+  instance_type = "t2.medium"
+  ami = "ami-020cba7c55df1f615"
   subnet_id   = module.vpc.private_subnets[1]
   security_groups = [aws_security_group.ec2_sg.id]
   tags = {
-    Name = "primary_network_interface"
+    Name = "cp-01"
   }
-}
-
-resource "aws_instance" "cp-01" {
-  key_name = "arch2"
-  instance_type = "t2.medium"
-  ami = "ami-020cba7c55df1f615"
-  network_interface {
-    network_interface_id = aws_network_interface.ani.id
-    device_index         = 0
-  }
-
 }
