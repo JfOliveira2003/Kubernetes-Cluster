@@ -34,15 +34,50 @@ resource "aws_security_group" "ec2_sg" {
     from_port       = 22
     to_port         = 22
     protocol        = "tcp"
-    cidr_blocks = [aws_instance.bastion.public_ip]
+    cidr_blocks = ["${aws_instance.bastion.public_ip}/32"]
   }
   ingress {
     description = "Interacting with the api server"
     from_port = 0
     to_port = 6443
     protocol = "TCP"
-    cidr_blocks = [aws_instance.bastion.public_ip]
+    cidr_blocks = ["${aws_instance.bastion.public_ip}/32"]
 
+  }
+  ingress {
+    description = "etcd server client IP"
+    from_port = 0
+    to_port = [2379, 2380]
+    protocol = "TCP"
+    cidr_blocks = ["${aws_instance.cp-01.private_ip}/24"]
+  }
+  ingress{
+    description = "Kubelet API"
+    from_port = 0
+    to_port = 10250
+    protocol = "TCP"
+    cidr_blocks = ["${aws_instance.cp-01.private_ip}/24"]
+  }
+  ingress {
+    description = "kube-scheduler"
+    from_port = 0
+    to_port = 10259
+    protocol = "TCP"
+    cidr_blocks = ["${aws_instance.cp-01.private_ip}/24"]
+  }
+  ingress{
+    description = "kube-controller-manager"
+    from_port = 0
+    to_port = 10257
+    protocol = "TCP"
+    cidr_blocks = ["${aws_instance.cp-01.private_ip}/24"]
+  }
+  ingress {
+    description = "Private IP ssh"
+    from_port = 22
+    to_port = 22
+    protocol = "TCP"
+    cidr_blocks = ["${aws_instance.bastion.private_ip}/24"]
   }
 
   # This allows all outbound traffic, which is needed for the instance
